@@ -1,0 +1,77 @@
+//ページが読み込まれて最初のMIDIOutputに表示される何番目のやつかを、
+//noteonとnoteoffのところのoutputs[*]の*番目（０スタート）に変えると
+//対象のMIDIデバイスをボタンで演奏できる
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web MIDI Test</title>
+</head>
+
+<body>
+    <p>Web MIDI Test</p>
+    <p><input type="button" value="弾く" id="btn" /></p>
+    <script>
+
+        /**
+         * @param {MIDIAccess} midiAccess
+         */
+        var successCallback = function (midiAccess) {
+            /** @type {Array.<MIDIInput>} */
+            var inputs = [];
+
+            /** @type {Array.<MIDIOutput>} */
+            var outputs = [];
+
+            if (Object.prototype.toString.call(midiAccess) === '[object Function]') {
+                // Legacy Chrome
+                console.log("Legacy Chrome");
+                inputs = midiAccess.inputs();
+                outputs = midiAccess.outputs();
+            } else {
+                console.log("Chrome 39 and later");
+                // Chrome 39 and later
+                var inputIterator = midiAccess.inputs.values();
+                var outputIterator = midiAccess.outputs.values();
+
+                for (var i = inputIterator.next(); !i.done; i = inputIterator.next()) {
+                    inputs.push(i.value);
+                    console.log(i.value);
+                }
+
+                for (var o = outputIterator.next(); !o.done; o = outputIterator.next()) {
+                    outputs.push(o.value);
+                    console.log(o.value);
+                }
+            }
+            let button = document.getElementById('btn');
+
+            button.addEventListener('mousedown', function () {
+                //note on
+                outputs[1].send([0x90, 0x45, 0x3f], (window.performance.now() + 0));
+                console.log("send[0x90, 0x45, 0x3f]");
+            });
+
+            button.addEventListener('mouseup', function () {
+                // note off
+                outputs[1].send([0x80, 0x45, 0x3f], (window.performance.now() + 0));
+                console.log("send[0x80, 0x45, 0x3f]");
+            });
+        }
+
+        /**
+         * @param {DOMException} error
+         */
+        var errorCallback = function (error) {
+            // do something ....
+        };
+
+        navigator.requestMIDIAccess({ sysex: true }).then(successCallback, errorCallback);
+
+    </script>
+</body>
+
+</html>
